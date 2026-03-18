@@ -11,19 +11,21 @@ class UserProvider extends ChangeNotifier {
   List<UserEntity> get users => _users;
   bool get isLoading => _isLoading;
 
-  final String _baseUrl = 'https://node-api-1h5r.onrender.com/api'; // Tu URL de API
+  final String _baseUrl = 'https://flutter-consumo.onrender.com/api'; // Tu URL de API
 
   Future<void> fetchUsers() async {
     _isLoading = true;
     notifyListeners();
     try {
       final response = await http.get(Uri.parse('$_baseUrl/users'));
+      print('Status: ${response.statusCode}');
+      print('Body: ${response.body}');
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
         _users = data.map((e) => UserEntity.fromJson(e)).toList();
       }
     } catch (e) {
-      print(e);
+      print('Error en fetchUsers: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -37,13 +39,15 @@ class UserProvider extends ChangeNotifier {
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'name': name, 'email': email, 'birthDate': birthDate}),
       );
+      print('Status addUser: ${response.statusCode}');
+      print('Body addUser: ${response.body}');
       if (response.statusCode == 201) {
         final newUser = UserEntity.fromJson(json.decode(response.body));
         _users.add(newUser);
         notifyListeners();
       }
     } catch (e) {
-      print(e);
+      print('Error en addUser: $e');
     }
   }
 
@@ -54,6 +58,7 @@ class UserProvider extends ChangeNotifier {
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'name': name, 'email': email, 'birthDate': birthDate}),
       );
+      print('Status updateUser: ${response.statusCode}');
       if (response.statusCode == 200) {
         final updated = UserEntity.fromJson(json.decode(response.body));
         final index = _users.indexWhere((u) => u.id == id);
@@ -63,19 +68,20 @@ class UserProvider extends ChangeNotifier {
         }
       }
     } catch (e) {
-      print(e);
+      print('Error en updateUser: $e');
     }
   }
 
   Future<void> deleteUser(String id) async {
     try {
       final response = await http.delete(Uri.parse('$_baseUrl/users/$id'));
+      print('Status deleteUser: ${response.statusCode}');
       if (response.statusCode == 200) {
         _users.removeWhere((u) => u.id == id);
         notifyListeners();
       }
     } catch (e) {
-      print(e);
+      print('Error en deleteUser: $e');
     }
   }
 }
