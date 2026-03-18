@@ -1,0 +1,16 @@
+# Excluded directories
+sintaxis_basica/
+
+# Documents (Word files)
+*.docx
+
+# Node modules (will be installed on render)
+mi-api/node_modules/
+
+# Flutter build artifacts
+hola_flutter/build/
+hola_flutter/.dart_tool/
+hola_flutter/.pub-cache/
+hola_flutter/android/.gradle/
+hola_flutter/ios/Pods/
+hola_flutter/macos/Pods/
