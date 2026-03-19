@@ -123,51 +123,34 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Intentar login via API
-      try {
-        final response = await http.post(
-          Uri.parse('$_baseUrl/auth/login'),
-          headers: {'Content-Type': 'application/json'},
-          body: json.encode({'email': email, 'password': password}),
-        );
-
-        if (response.statusCode == 200) {
-          final data = json.decode(response.body);
-          _token = data['token'] ?? 'local_token';
-          _user = data['user'] ?? {
-            'name': email.split('@')[0],
-            'email': email,
-          };
+      // Validación local usando los datos guardados en SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final userData = prefs.getString('user');
+      
+      if (userData != null) {
+        final Map<String, dynamic> savedUser = json.decode(userData);
+        print('Usuario guardado: $savedUser');
+        print('Email comparado: ${savedUser['email']} == $email');
+        print('Password comparado: ${savedUser['password']} == $password');
+        
+        if (savedUser['email'] == email && savedUser['password'] == password) {
+          _token = savedUser['token'] ?? 'local_token_${DateTime.now().millisecondsSinceEpoch}';
+          _user = savedUser;
           await _saveCredentials();
+          _isLoading = false;
+          notifyListeners();
           return AuthResult(success: true);
         }
-      } catch (e) {
-        // Si falla la API, intentar validación local
       }
       
-      // Validación local usando los datos guardados
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        final userData = prefs.getString('user');
-        if (userData != null) {
-          final Map<String, dynamic> savedUser = json.decode(userData);
-          if (savedUser['email'] == email && savedUser['password'] == password) {
-            _token = savedUser['token'] ?? 'local_token_${DateTime.now().millisecondsSinceEpoch}';
-            _user = savedUser;
-            await _saveCredentials();
-            return AuthResult(success: true);
-          }
-        }
-        return AuthResult(success: false, message: 'Credenciales incorrectas');
-      } catch (e) {
-        return AuthResult(success: false, message: 'Error al iniciar sesión');
-      }
-    } catch (e) {
-      print('Error en login: $e');
-      return AuthResult(success: false, message: 'Error al iniciar sesión');
-    } finally {
       _isLoading = false;
       notifyListeners();
+      return AuthResult(success: false, message: 'Credenciales incorrectas');
+    } catch (e) {
+      print('Error en login: $e');
+      _isLoading = false;
+      notifyListeners();
+      return AuthResult(success: false, message: 'Error al iniciar sesión');
     }
   }
 
