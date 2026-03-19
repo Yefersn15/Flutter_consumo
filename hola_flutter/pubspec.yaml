@@ -47,6 +47,9 @@ dependencies:
   # Mailer para enviar correos
   mailer: ^6.0.1
 
+  # Para guardar token de autenticación
+  shared_preferences: ^2.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

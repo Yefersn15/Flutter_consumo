@@ -1,23 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'providers/user_provider.dart'; // Ajusta la ruta
+import 'providers/auth_provider.dart';
+import 'providers/user_provider.dart';
 import 'screens/home_menu.dart';
 import 'home_page.dart';
 import 'login.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final authProvider = AuthProvider();
+  await authProvider.tryAutoLogin();
+  runApp(MyApp(authProvider: authProvider));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final AuthProvider authProvider;
+  const MyApp({super.key, required this.authProvider});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider.value(value: authProvider),
         ChangeNotifierProvider(create: (_) => UserProvider()),
-        // Puedes agregar otros providers aquí si los necesitas
       ],
       child: MaterialApp(
         title: 'Mi App en Zapp Run',
@@ -25,7 +30,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         ),
         debugShowCheckedModeBanner: false,
-        home: const LoginPage(),
+        home: authProvider.isAuthenticated ? const MyHomePage() : const LoginPage(),
       ),
     );
   }
