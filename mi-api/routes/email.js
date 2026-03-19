@@ -7,7 +7,7 @@ const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: 'yefersonandres225@gmail.com',
-    pass: 'dvaf jxxp qphd hiqf' // La nueva contraseña
+    pass: 'dvafjxxpqphdhiqf' // Contraseña de aplicación sin espacios
   }
 });
 
@@ -20,7 +20,7 @@ router.post('/send', async (req, res) => {
   }
 
   const mailOptions = {
-    from: '"App Flutter" <carlosgomez0717@gmail.com>',
+    from: '"App Flutter" <yefersonandres225@gmail.com>', // Debe coincidir con auth.user
     to,
     subject,
     text,
@@ -28,11 +28,12 @@ router.post('/send', async (req, res) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
-    res.json({ message: 'Correo enviado' });
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email enviado: %s', info.messageId);
+    res.json({ message: 'Correo enviado correctamente' });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
+    console.error('Error detallado:', error);
+    res.status(500).json({ message: 'Error al enviar correo. Verifica las credenciales.' });
   }
 });
 

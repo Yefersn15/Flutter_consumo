@@ -41,7 +41,7 @@ class _EmailPageState extends State<EmailPage> {
           'subject': _subjectController.text,
           'text': _bodyController.text,
         }),
-      ).timeout(const Duration(seconds: 10)); // ⏱️ Timeout de 10 segundos
+      ).timeout(const Duration(seconds: 30)); // ⏱️ Timeout de 30 segundos
 
       if (!mounted) return; // ❗ Importante: salir si el widget ya no existe
 
