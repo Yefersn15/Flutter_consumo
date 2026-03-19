@@ -123,34 +123,73 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Validación local usando los datos guardados en SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      final userData = prefs.getString('user');
-      
-      if (userData != null) {
-        final Map<String, dynamic> savedUser = json.decode(userData);
-        print('Usuario guardado: $savedUser');
-        print('Email comparado: ${savedUser['email']} == $email');
-        print('Password comparado: ${savedUser['password']} == $password');
+      // Intentar login via API
+      final response = await http.post(
+        Uri.parse('$_baseUrl/users/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'email': email, 'password': password}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        _token = data['token'] ?? 'local_token';
+        _user = data['user'];
+        await _saveCredentials();
+        _isLoading = false;
+        notifyListeners();
+        return AuthResult(success: true);
+      } else if (response.statusCode == 401) {
+        _isLoading = false;
+        notifyListeners();
+        return AuthResult(success: false, message: 'Credenciales incorrectas');
+      } else {
+        // Si falla la API, intentar validación local
+        final prefs = await SharedPreferences.getInstance();
+        final userData = prefs.getString('user');
         
-        if (savedUser['email'] == email && savedUser['password'] == password) {
-          _token = savedUser['token'] ?? 'local_token_${DateTime.now().millisecondsSinceEpoch}';
-          _user = savedUser;
-          await _saveCredentials();
-          _isLoading = false;
-          notifyListeners();
-          return AuthResult(success: true);
+        if (userData != null) {
+          final Map<String, dynamic> savedUser = json.decode(userData);
+          if (savedUser['email'] == email && savedUser['password'] == password) {
+            _token = savedUser['token'] ?? 'local_token_${DateTime.now().millisecondsSinceEpoch}';
+            _user = savedUser;
+            await _saveCredentials();
+            _isLoading = false;
+            notifyListeners();
+            return AuthResult(success: true);
+          }
         }
+        
+        final data = json.decode(response.body);
+        _isLoading = false;
+        notifyListeners();
+        return AuthResult(success: false, message: data['message'] ?? 'Error al iniciar sesión');
       }
-      
-      _isLoading = false;
-      notifyListeners();
-      return AuthResult(success: false, message: 'Credenciales incorrectas');
     } catch (e) {
-      print('Error en login: $e');
-      _isLoading = false;
-      notifyListeners();
-      return AuthResult(success: false, message: 'Error al iniciar sesión');
+      // Si hay error de conexión, intentar validación local
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final userData = prefs.getString('user');
+        
+        if (userData != null) {
+          final Map<String, dynamic> savedUser = json.decode(userData);
+          if (savedUser['email'] == email && savedUser['password'] == password) {
+            _token = savedUser['token'] ?? 'local_token_${DateTime.now().millisecondsSinceEpoch}';
+            _user = savedUser;
+            await _saveCredentials();
+            _isLoading = false;
+            notifyListeners();
+            return AuthResult(success: true);
+          }
+        }
+        _isLoading = false;
+        notifyListeners();
+        return AuthResult(success: false, message: 'Credenciales incorrectas');
+      } catch (e2) {
+        print('Error en login: $e');
+        _isLoading = false;
+        notifyListeners();
+        return AuthResult(success: false, message: 'Error al iniciar sesión');
+      }
     }
   }
 
