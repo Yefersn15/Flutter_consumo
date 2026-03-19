@@ -41,7 +41,9 @@ class _EmailPageState extends State<EmailPage> {
           'subject': _subjectController.text,
           'text': _bodyController.text,
         }),
-      );
+      ).timeout(const Duration(seconds: 10)); // ⏱️ Timeout de 10 segundos
+
+      if (!mounted) return; // ❗ Importante: salir si el widget ya no existe
 
       if (response.statusCode == 200) {
         setState(() {
@@ -51,11 +53,9 @@ class _EmailPageState extends State<EmailPage> {
         _toController.clear();
         _subjectController.clear();
         _bodyController.clear();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Correo enviado exitosamente!')),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Correo enviado exitosamente!')),
+        );
       } else {
         final data = json.decode(response.body);
         setState(() {
@@ -64,6 +64,7 @@ class _EmailPageState extends State<EmailPage> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _statusMessage = 'Error de conexión: $e';
         _isLoading = false;

@@ -85,7 +85,15 @@ class AuthProvider extends ChangeNotifier {
         // Guardamos los datos del usuario devueltos por el servidor
         final data = json.decode(response.body);
         _token = 'local_token_${DateTime.now().millisecondsSinceEpoch}';
-        _user = data; // Guardamos todos los campos: name, surname, email, sex, birthDate, etc.
+        
+        // Combinar datos del backend con los del formulario (apellido, sexo y contraseña)
+        _user = {
+          ...data,
+          'surname': surname,
+          'sex': sex,
+          'password': password, // Solo para validación local
+        };
+        
         await _saveCredentials();
         return AuthResult(success: true);
       } else if (response.statusCode == 400) {
@@ -132,25 +140,27 @@ class AuthProvider extends ChangeNotifier {
           };
           await _saveCredentials();
           return AuthResult(success: true);
-        } else {
-          // Fallback: validación local simple
-          _token = 'local_token_${DateTime.now().millisecondsSinceEpoch}';
-          _user = {
-            'name': email.split('@')[0],
-            'email': email,
-          };
-          await _saveCredentials();
-          return AuthResult(success: true);
         }
       } catch (e) {
-        // Fallback: validación local simple
-        _token = 'local_token_${DateTime.now().millisecondsSinceEpoch}';
-        _user = {
-          'name': email.split('@')[0],
-          'email': email,
-        };
-        await _saveCredentials();
-        return AuthResult(success: true);
+        // Si falla la API, intentar validación local
+      }
+      
+      // Validación local usando los datos guardados
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final userData = prefs.getString('user');
+        if (userData != null) {
+          final Map<String, dynamic> savedUser = json.decode(userData);
+          if (savedUser['email'] == email && savedUser['password'] == password) {
+            _token = savedUser['token'] ?? 'local_token_${DateTime.now().millisecondsSinceEpoch}';
+            _user = savedUser;
+            await _saveCredentials();
+            return AuthResult(success: true);
+          }
+        }
+        return AuthResult(success: false, message: 'Credenciales incorrectas');
+      } catch (e) {
+        return AuthResult(success: false, message: 'Error al iniciar sesión');
       }
     } catch (e) {
       print('Error en login: $e');
