@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
+import 'home_page.dart';
 
 // Validaciones locales para register
 bool _isNameValid(String value) {
@@ -353,7 +354,11 @@ class _RegisterPageState extends State<RegisterPage> {
                                             duration: Duration(milliseconds: 1500),
                                           )
                                         );
-                                        Navigator.pop(context);
+                                        // Auto-login: navegar directamente a Home
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(builder: (context) => const MyHomePage()),
+                                        );
                                       } else if (mounted) {
                                         // Mostrar mensaje de error específico
                                         ScaffoldMessenger.of(context).showSnackBar(
